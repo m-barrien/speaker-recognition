@@ -1,7 +1,5 @@
 /*
 
-This example reads from the default PCM device
-and writes to standard output for 5 seconds of data.
 
 */
 
@@ -9,9 +7,20 @@ and writes to standard output for 5 seconds of data.
 #define ALSA_PCM_NEW_HW_PARAMS_API
 
 #include <alsa/asoundlib.h>
+#include <thread>
+#include <string>
+#include <mutex>
 #define N_CHANNELS 1
+#define PERIOD_SIZE 1024
+#define SAMPLES_PER_SECOND 44100
 
-int main() {
+
+static std::mutex raw_buffer_mutex;
+static std::string dev_name = "hw:1,0";
+static char *buffer;
+static bool capturing = true;
+
+void *capture_mic() {
   long loops;
   int rc;
   int size;
@@ -20,11 +29,11 @@ int main() {
   unsigned int val;
   int dir;
   snd_pcm_uframes_t frames;
-  char *buffer;
+  
 
 
   /* Open PCM device for recording (capture). */
-  rc = snd_pcm_open(&handle, "hw:1,0",
+  rc = snd_pcm_open(&handle, dev_name.c_str(),
                     SND_PCM_STREAM_CAPTURE, 0);
   if (rc < 0) {
     fprintf(stderr,
@@ -32,36 +41,27 @@ int main() {
             snd_strerror(rc));
     exit(1);
   }
-
   /* Allocate a hardware parameters object. */
   snd_pcm_hw_params_alloca(&params);
-
   /* Fill it in with default values. */
   snd_pcm_hw_params_any(handle, params);
-
   /* Set the desired hardware parameters. */
-
   /* Interleaved mode */
   snd_pcm_hw_params_set_access(handle, params,
                       SND_PCM_ACCESS_RW_INTERLEAVED);
-
   /* Signed 16-bit little-endian format */
   snd_pcm_hw_params_set_format(handle, params,
                               SND_PCM_FORMAT_S16_LE);
-
   /* Two channels (stereo) */
   snd_pcm_hw_params_set_channels(handle, params, N_CHANNELS);
-
   /* 44100 bits/second sampling rate (CD quality) */
-  val = 44100;
+  val = SAMPLES_PER_SECOND;
   snd_pcm_hw_params_set_rate_near(handle, params,
                                   &val, &dir);
-
   /* Set period size to 32 frames. */
-  frames = 32;
+  frames = PERIOD_SIZE;
   snd_pcm_hw_params_set_period_size_near(handle,
                               params, &frames, &dir);
-
   /* Write the parameters to the driver */
   rc = snd_pcm_hw_params(handle, params);
   if (rc < 0) {
@@ -70,20 +70,19 @@ int main() {
             snd_strerror(rc));
     exit(1);
   }
-
   /* Use a buffer large enough to hold one period */
   snd_pcm_hw_params_get_period_size(params,
                                       &frames, &dir);
-  size = frames * 2 * N_CHANNELS; /* 2 bytes/sample, 2 channels */
-  buffer = (char *) new char[size];
-
+  size = frames * 2 * N_CHANNELS; 
+  /* 2 bytes/sample, 2 channels */
+  
   /* We want to loop for 5 seconds */
   snd_pcm_hw_params_get_period_time(params,
                                          &val, &dir);
-  loops = 5000000 / val;
-
-  while (loops > 0) {
-    loops--;
+  //loops = 50000 / val;
+  while (capturing) {
+    //loops--;
+    raw_buffer_mutex.lock();
     rc = snd_pcm_readi(handle, buffer, frames);
     if (rc == -EPIPE) {
       /* EPIPE means overrun */
@@ -95,26 +94,29 @@ int main() {
               snd_strerror(rc));
     } else if (rc != (int)frames) {
       fprintf(stderr, "short read, read %d frames\n", rc);
-    }
-    
+    } 
+    else raw_buffer_mutex.unlock();
     rc = write(1, buffer, size);
+    /*
     if (rc != size)
       fprintf(stderr,
               "short write: wrote %d bytes\n", rc);
-    /*
-    for (int i = 0; i < frames; ++i)
-    {
-      short* sound_sample = 0;
-      sound_sample = (short*)(buffer + i * 2 * N_CHANNELS);
-      printf("%hd\n",  *sound_sample);
-    }
-              */
-    //printf("\n");
-    
+    */
   }
-
   snd_pcm_drain(handle);
   snd_pcm_close(handle);
+
+
+  pthread_exit(NULL);
+}
+
+int main() {
+  buffer = new char[PERIOD_SIZE*2*N_CHANNELS];
+  
+  std::thread capture_thread(capture_mic);
+  capturing = true;
+  capture_thread.join();
+
 
   return 0;
 }

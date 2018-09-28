@@ -1,9 +1,9 @@
 all: clean compile
 
 clean:
-	rm capture
+	rm capture -f
 compile:
-	g++ -o capture  main.cpp -lasound
+	g++ -std=c++11 -o capture  main.cpp -lasound -lpthread
 run:
 	./capture
 sample:
