@@ -24,7 +24,7 @@ int main() {
 
 
   /* Open PCM device for recording (capture). */
-  rc = snd_pcm_open(&handle, "hw:2,0",
+  rc = snd_pcm_open(&handle, "hw:1,0",
                     SND_PCM_STREAM_CAPTURE, 0);
   if (rc < 0) {
     fprintf(stderr,
@@ -75,7 +75,7 @@ int main() {
   snd_pcm_hw_params_get_period_size(params,
                                       &frames, &dir);
   size = frames * 2 * N_CHANNELS; /* 2 bytes/sample, 2 channels */
-  buffer = (char *) malloc(size);
+  buffer = (char *) new char[size];
 
   /* We want to loop for 5 seconds */
   snd_pcm_hw_params_get_period_time(params,
@@ -96,25 +96,24 @@ int main() {
     } else if (rc != (int)frames) {
       fprintf(stderr, "short read, read %d frames\n", rc);
     }
-    /*
     rc = write(1, buffer, size);
     if (rc != size)
       fprintf(stderr,
               "short write: wrote %d bytes\n", rc);
-              */
+    /*
     for (int i = 0; i < frames; ++i)
     {
       short* sound_sample = 0;
       sound_sample = (short*)(buffer + i * 2 * N_CHANNELS);
       printf("%hd\n",  *sound_sample);
     }
+              */
     //printf("\n");
     
   }
 
   snd_pcm_drain(handle);
   snd_pcm_close(handle);
-  free(buffer);
 
   return 0;
 }

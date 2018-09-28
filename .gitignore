@@ -31,3 +31,6 @@
 *.out
 *.app
 capture
+
+*.wav
+*.raw
