@@ -96,6 +96,7 @@ int main() {
     } else if (rc != (int)frames) {
       fprintf(stderr, "short read, read %d frames\n", rc);
     }
+    
     rc = write(1, buffer, size);
     if (rc != size)
       fprintf(stderr,
