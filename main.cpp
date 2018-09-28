@@ -7,9 +7,12 @@
 #define ALSA_PCM_NEW_HW_PARAMS_API
 
 #include <alsa/asoundlib.h>
+#include <signal.h>
 #include <thread>
 #include <string>
 #include <mutex>
+#include <iostream>
+#include <cstdint>
 #define N_CHANNELS 1
 #define PERIOD_SIZE 1024
 #define SAMPLES_PER_SECOND 44100
@@ -18,7 +21,14 @@
 static std::mutex raw_buffer_mutex;
 static std::string dev_name = "hw:1,0";
 static char *buffer;
+static int16_t *int_buffer;
+static float *float_buffer;
 static bool capturing = true;
+
+void my_handler(int sig){
+  capturing=false;
+  std::cout << std::endl << "TERMINATED" << std::endl;
+}
 
 void *capture_mic() {
   long loops;
@@ -96,8 +106,8 @@ void *capture_mic() {
       fprintf(stderr, "short read, read %d frames\n", rc);
     } 
     else raw_buffer_mutex.unlock();
-    rc = write(1, buffer, size);
     /*
+    rc = write(1, buffer, size);
     if (rc != size)
       fprintf(stderr,
               "short write: wrote %d bytes\n", rc);
@@ -111,13 +121,26 @@ void *capture_mic() {
 }
 
 int main() {
+  //Señal para terminar
+  signal (SIGINT,my_handler);
+
   buffer = new char[PERIOD_SIZE*2*N_CHANNELS];
-  
+  int_buffer = new int16_t[PERIOD_SIZE*N_CHANNELS];
+  float_buffer = new float[PERIOD_SIZE*N_CHANNELS];
+
   std::thread capture_thread(capture_mic);
-  capturing = true;
+
+  while(capturing){
+    raw_buffer_mutex.lock();
+    memcpy(int_buffer, buffer, PERIOD_SIZE*2*N_CHANNELS);
+    raw_buffer_mutex.unlock();
+    for (int i = 0; i < PERIOD_SIZE*N_CHANNELS; ++i)
+    {
+      float_buffer[i] = (float) int_buffer[i]/32768.f;
+    }
+  }
+  
   capture_thread.join();
-
-
   return 0;
 }
 
