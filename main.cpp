@@ -28,13 +28,17 @@ static float *float_buffer;
 static bool capturing = true;
 
 void exit_handler(int sig){
+  if (sig == SIGINT)
+  {
+    /* code */
+  }
   capturing=false;
 }
 
 void *capture_mic() {
-  long loops;
+  //long loops;
   int rc;
-  int size;
+  //int size;
   snd_pcm_t *handle;
   snd_pcm_hw_params_t *params;
   unsigned int val;
@@ -84,7 +88,7 @@ void *capture_mic() {
   /* Use a buffer large enough to hold one period */
   snd_pcm_hw_params_get_period_size(params,
                                       &frames, &dir);
-  size = frames * 2 * N_CHANNELS; 
+  //size = frames * 2 * N_CHANNELS; 
   /* 2 bytes/sample, 2 channels */
   
   /* We want to loop for 5 seconds */

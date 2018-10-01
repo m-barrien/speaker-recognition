@@ -1,9 +1,22 @@
+DATATYPE=float
+TYPEFLAGS=-Dkiss_fft_scalar=$(DATATYPE)
+WARNINGS=-W -Wall  -Waggregate-return -Wcast-align -Wcast-qual  -Wshadow  -Wwrite-strings
+
+FFTUTIL=fft_$(DATATYPE)
+FASTFILT=fastconv_$(DATATYPE)
+FASTFILTREAL=fastconvr_$(DATATYPE)
+PSDPNG=psdpng_$(DATATYPE)
+DUMPHDR=dumphdr_$(DATATYPE)
+
+
+CFLAGS=-std=c++11 -Wall -O3 $(WARNINGS)
+
 all: clean compile
 
 clean:
 	rm capture -f
 compile:
-	g++ -std=c++11 -o capture  main.cpp Preprocessing.cpp -lasound -lpthread
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o capture  main.cpp Preprocessing.cpp -lasound -lpthread
 run:
 	./capture
 sample:

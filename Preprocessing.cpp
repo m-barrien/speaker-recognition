@@ -1,28 +1,28 @@
 #include "Preprocessing.h"
 
-SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int frame_len, float overlap_percentage){
+SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_len, float overlap_percentage){
 	assert(overlap_percentage >= 0.f && overlap_percentage < 1.f);
-	assert(buffer_len >= frame_len);
+	assert(buffer_len >= _frame_len);
 	this->signal_buffer = buffer;
 	this->out_signal_buffer = new int16_t[buffer_len];
 	this->raw_buffer_len = buffer_len;
-	this->frame_len = frame_len;
-	this->in_frame_offset = (int) (frame_len*(1.0f - overlap_percentage));
+	this->frame_len = _frame_len;
+	this->in_frame_offset = (int) (_frame_len*(1.0f - overlap_percentage));
 
 	int i=0;
-	while(buffer_len >= frame_len + i*this->in_frame_offset) i++;
+	while(buffer_len >= _frame_len + i*this->in_frame_offset) i++;
 	this->frame_count = i;
 
 	this->frames = new float*[this->frame_count];
-	for (int i = 0; i < this->frame_count; ++i)
+	for (int j = 0; j < this->frame_count; ++j)
 	{
-		this->frames[i] = new float[frame_len];
+		this->frames[j] = new float[_frame_len];
 	}
 	/*
 		Fill hamming window
 	*/
-	this->hamming_window = new float[frame_len];
-	for (int j = 0; j < frame_len; ++j)
+	this->hamming_window = new float[_frame_len];
+	for (int j = 0; j < _frame_len; ++j)
 	{
 		this->hamming_window[j]=( 0.54 - 0.46 * cos((2*M_PI*j)/(this->frame_len)) );
 	}
