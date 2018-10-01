@@ -8,10 +8,16 @@
 class SignalPreprocessor
 {
 private:
+	int sample_rate;
 	int raw_buffer_len;
 	int frame_len;
 	int frame_count;
 	int in_frame_offset;
+	/*
+		base_frec
+		basal frecuencies from FFt bins basen don samplerate freq/nsamples
+	*/
+	float base_freq;
 	float *signal_buffer;
 	float *hamming_window;
 	float **frames;
@@ -25,7 +31,7 @@ private:
 	kiss_fftr_cfg fft_cfg;
 
 public:
-	SignalPreprocessor(float*,int,int,float);
+	SignalPreprocessor(float*,int,int,float,int);
 	int getFrameCount(void);
 	
 	/*
@@ -62,4 +68,6 @@ public:
 	void framesFFT(void);
 	float* getFrame(int i);
 	float* getPowerFrame(int i);
+	static float melToHz(float);
+	static float hzToMel(float);
 };

@@ -1,6 +1,6 @@
 #include "Preprocessing.h"
 
-SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_len, float overlap_percentage){
+SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_len, float overlap_percentage, int sr){
 	assert(overlap_percentage >= 0.f && overlap_percentage < 1.f);
 	assert(buffer_len >= _frame_len);
 	this->signal_buffer = buffer;
@@ -33,6 +33,8 @@ SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_
 		KISS FFT allocate
 		*/
 	this->fft_cfg = kiss_fftr_alloc(_frame_len,0,NULL, NULL);
+	this->sample_rate = sr;
+	this->base_freq = (float)sr/(float)frame_len;
 
 }
 
@@ -91,4 +93,10 @@ float* SignalPreprocessor::getFrame(int i){
 }
 float* SignalPreprocessor::getPowerFrame(int i){
 	return this->power_frames[i];
+}
+inline float SignalPreprocessor::melToHz(float mel){
+	return 700*(exp(mel/1125)-1);
+}
+inline float SignalPreprocessor::hzToMel(float f){
+	return 1127*log(1+f/700);
 }
