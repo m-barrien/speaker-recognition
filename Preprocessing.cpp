@@ -14,9 +14,11 @@ SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_
 	this->frame_count = i;
 
 	this->frames = new float*[this->frame_count];
+	this->power_frames = new float*[this->frame_count];
 	for (int j = 0; j < this->frame_count; ++j)
 	{
 		this->frames[j] = new float[_frame_len];
+		this->power_frames[j] = new float[_frame_len];
 	}
 	/*
 		Fill hamming window
@@ -24,7 +26,7 @@ SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_
 	this->hamming_window = new float[_frame_len];
 	for (int j = 0; j < _frame_len; ++j)
 	{
-		this->hamming_window[j]=( 0.54 - 0.46 * cos((2*M_PI*j)/(this->frame_len)) );
+		this->hamming_window[j]=( 0.54 - 0.46 * cos((2*M_PI*j)/(this->frame_len-1)) );
 	}
 
 	/*
@@ -72,4 +74,21 @@ void SignalPreprocessor::applyWindowsToFrames(void){
 		}
 		memcpy(this->frames[i], window_buffer, this->frame_len*sizeof(float)); 
 	}
+}
+void SignalPreprocessor::framesFFT(void){
+	kiss_fft_cpx complex_arr[this->frame_len];
+	for (int i = 0; i < this->frame_count; ++i)
+	{
+		kiss_fftr(this->fft_cfg, this->frames[i], complex_arr);
+		for (int j = 0; j < this->frame_len; ++j)
+		{
+			this->power_frames[i][j] = (pow(complex_arr[j].r,2) + pow(complex_arr[j].i,2))/this->frame_len;
+		}
+	}
+}
+float* SignalPreprocessor::getFrame(int i){
+	return this->frames[i];
+}
+float* SignalPreprocessor::getPowerFrame(int i){
+	return this->power_frames[i];
 }
