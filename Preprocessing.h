@@ -13,6 +13,7 @@ private:
 	int frame_len;
 	int frame_count;
 	int in_frame_offset;
+	int n_mel_filters;
 	/*
 		base_frec
 		basal frecuencies from FFt bins basen don samplerate freq/nsamples
@@ -73,4 +74,5 @@ public:
 	inline float melToHz(float);
 	inline float hzToMel(float);
 	void buildFilterBanks(int nfilters,int f0, int fmax);
+	float filterValue(int bank_index, float power_freq);
 };
