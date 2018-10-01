@@ -3,7 +3,7 @@ all: clean compile
 clean:
 	rm capture -f
 compile:
-	g++ -std=c++11 -o capture  main.cpp -lasound -lpthread
+	g++ -std=c++11 -o capture  main.cpp Preprocessing.cpp -lasound -lpthread
 run:
 	./capture
 sample:

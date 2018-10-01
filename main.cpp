@@ -8,6 +8,7 @@
 
 #include <alsa/asoundlib.h>
 #include <signal.h>
+#include "Preprocessing.h"
 #include <thread>
 #include <string>
 #include <mutex>
@@ -22,7 +23,7 @@ static std::mutex raw_buffer_mutex;
 static std::string dev_name = "hw:1,0";
 static char *buffer;
 static int16_t *int_buffer;
-static int frame_overflow=1;
+static int frame_overflow=0;
 static float *float_buffer;
 static bool capturing = true;
 
@@ -131,6 +132,8 @@ int main() {
   buffer = new char[RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS];
   int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
+
+  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f);
 
   std::thread capture_thread(capture_mic);
 
