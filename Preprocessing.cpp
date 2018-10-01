@@ -27,6 +27,11 @@ SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_
 		this->hamming_window[j]=( 0.54 - 0.46 * cos((2*M_PI*j)/(this->frame_len)) );
 	}
 
+	/*
+		KISS FFT allocate
+		*/
+	this->fft_cfg = kiss_fftr_alloc(_frame_len,0,NULL, NULL);
+
 }
 
 int SignalPreprocessor::getFrameCount(void){

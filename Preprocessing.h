@@ -16,6 +16,8 @@ private:
 	float *hamming_window;
 	float **frames;
 	int16_t *out_signal_buffer;
+
+	kiss_fftr_cfg fft_cfg;
 public:
 	SignalPreprocessor(float*,int,int,float);
 	int getFrameCount(void);
