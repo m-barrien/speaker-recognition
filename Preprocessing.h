@@ -2,6 +2,8 @@
 #include <string.h>
 #include <iostream>
 #include <cstdint>
+#include <cmath>
+
 
 class SignalPreprocessor
 {
@@ -11,6 +13,7 @@ private:
 	int frame_count;
 	int in_frame_offset;
 	float *signal_buffer;
+	float *hamming_window;
 	float **frames;
 	int16_t *out_signal_buffer;
 public:
@@ -28,4 +31,5 @@ public:
 	void applyPreEmphasis(float);
 	void dumpSignal(char*);
 	void dumpToFrames(void);
+	void applyWindowsToFrames(void);
 };

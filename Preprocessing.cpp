@@ -18,6 +18,14 @@ SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int frame_l
 	{
 		this->frames[i] = new float[frame_len];
 	}
+	/*
+		Fill hamming window
+	*/
+	this->hamming_window = new float[frame_len];
+	for (int j = 0; j < frame_len; ++j)
+	{
+		this->hamming_window[j]=( 0.54 - 0.46 * cos((2*M_PI*j)/(this->frame_len)) );
+	}
 
 }
 
@@ -46,5 +54,17 @@ void SignalPreprocessor::dumpToFrames(void){
 	for (int i = 0; i < this->frame_count; ++i)
 	{
 		memcpy(this->frames[i], this->signal_buffer + i*in_frame_offset, this->frame_len*sizeof(float)); //4 bytes per float
+	}
+}
+void SignalPreprocessor::applyWindowsToFrames(void){
+	float window_buffer[this->frame_len];
+
+	for (int i = 0; i < this->frame_count; ++i)
+	{
+		for (int j = 0; j < this->frame_len; ++j)
+		{
+			window_buffer[j]=this->frames[i][j] * this->hamming_window[j];
+		}
+		memcpy(this->frames[i], window_buffer, this->frame_len*sizeof(float)); 
 	}
 }

@@ -153,7 +153,8 @@ int main() {
       float_buffer[i] = (float) int_buffer[i]/32768.f;
     }
     sProcessor.applyPreEmphasis(0.97f);
-    sProcessor.dumpSignal(out_transformed_buffer);
+    sProcessor.dumpToFrames();
+    sProcessor.applyWindowsToFrames();
     //write(1, out_transformed_buffer, RAW_PERIOD_SAMPLE_SIZE*2);
   }
   
