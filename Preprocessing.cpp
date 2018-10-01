@@ -98,5 +98,16 @@ inline float SignalPreprocessor::melToHz(float mel){
 	return 700*(exp(mel/1125)-1);
 }
 inline float SignalPreprocessor::hzToMel(float f){
-	return 1127*log(1+f/700);
+	return 1125*log(1+f/700);
+}
+void SignalPreprocessor::buildFilterBanks(int nfilters,int f0, int fmax){
+	this->mel_values = new float[nfilters+2];
+	this->freq_values = new float[nfilters+2];
+	float mel_i = hzToMel(f0);
+	float mel_f = hzToMel(fmax);
+	for (int i = 0; i < nfilters+2; ++i)
+	{
+		this->mel_values[i] = mel_i + i*(mel_f - mel_i)/(nfilters+1);
+		this->freq_values[i] = melToHz(this->mel_values[i]);
+	}
 }

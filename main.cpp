@@ -138,7 +138,7 @@ int main() {
   int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
-  SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f);
+  SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f, SAMPLES_PER_SECOND);
 
   std::thread capture_thread(capture_mic);
 
@@ -159,6 +159,22 @@ int main() {
     sProcessor.applyPreEmphasis(0.97f);
     sProcessor.dumpToFrames();
     sProcessor.applyWindowsToFrames();
+    sProcessor.framesFFT();
+
+    
+    float *frame = sProcessor.getFrame(5);
+    float *powerframe = sProcessor.getPowerFrame(5);
+    capturing=false;
+    for (int i = 0; i < 1024; ++i)
+    {
+      std::cout << frame[i] << ",";
+    }
+    std::cout << std::endl;
+    for (int i = 0; i < 1024; ++i)
+    {
+      std::cout << powerframe[i] << ",";
+    }
+    std::cout << std::endl;
     //write(1, out_transformed_buffer, RAW_PERIOD_SAMPLE_SIZE*2);
   }
   

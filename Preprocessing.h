@@ -26,6 +26,8 @@ private:
 	 power spectrum (periodogram) using the following equation:
 	*/
 	float **power_frames;
+	float *mel_values;
+	float *freq_values;
 	int16_t *out_signal_buffer;
 
 	kiss_fftr_cfg fft_cfg;
@@ -68,6 +70,7 @@ public:
 	void framesFFT(void);
 	float* getFrame(int i);
 	float* getPowerFrame(int i);
-	static float melToHz(float);
-	static float hzToMel(float);
+	inline float melToHz(float);
+	inline float hzToMel(float);
+	void buildFilterBanks(int nfilters,int f0, int fmax);
 };
