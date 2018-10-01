@@ -14,7 +14,7 @@
 #include <iostream>
 #include <cstdint>
 #define N_CHANNELS 1
-#define PERIOD_SIZE 1024
+#define RAW_PERIOD_SAMPLE_SIZE 8192
 #define SAMPLES_PER_SECOND 44100
 
 
@@ -22,12 +22,12 @@ static std::mutex raw_buffer_mutex;
 static std::string dev_name = "hw:1,0";
 static char *buffer;
 static int16_t *int_buffer;
+static int frame_overflow=1;
 static float *float_buffer;
 static bool capturing = true;
 
-void my_handler(int sig){
+void exit_handler(int sig){
   capturing=false;
-  std::cout << std::endl << "TERMINATED" << std::endl;
 }
 
 void *capture_mic() {
@@ -69,7 +69,7 @@ void *capture_mic() {
   snd_pcm_hw_params_set_rate_near(handle, params,
                                   &val, &dir);
   /* Set period size to 32 frames. */
-  frames = PERIOD_SIZE;
+  frames = RAW_PERIOD_SAMPLE_SIZE;
   snd_pcm_hw_params_set_period_size_near(handle,
                               params, &frames, &dir);
   /* Write the parameters to the driver */
@@ -105,7 +105,11 @@ void *capture_mic() {
     } else if (rc != (int)frames) {
       fprintf(stderr, "short read, read %d frames\n", rc);
     } 
-    else raw_buffer_mutex.unlock();
+    else {
+      frame_overflow++;
+      raw_buffer_mutex.unlock();
+    }
+    usleep(100);
     /*
     rc = write(1, buffer, size);
     if (rc != size)
@@ -122,25 +126,29 @@ void *capture_mic() {
 
 int main() {
   //Señal para terminar
-  signal (SIGINT,my_handler);
+  signal (SIGINT,exit_handler);
 
-  buffer = new char[PERIOD_SIZE*2*N_CHANNELS];
-  int_buffer = new int16_t[PERIOD_SIZE*N_CHANNELS];
-  float_buffer = new float[PERIOD_SIZE*N_CHANNELS];
+  buffer = new char[RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS];
+  int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
+  float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
   std::thread capture_thread(capture_mic);
 
   while(capturing){
+    if (frame_overflow < 1) continue;
     raw_buffer_mutex.lock();
-    memcpy(int_buffer, buffer, PERIOD_SIZE*2*N_CHANNELS);
+    memcpy(int_buffer, buffer, RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS);
+    frame_overflow--;
     raw_buffer_mutex.unlock();
-    for (int i = 0; i < PERIOD_SIZE*N_CHANNELS; ++i)
+    for (int i = 0; i < RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS; ++i)
     {
       float_buffer[i] = (float) int_buffer[i]/32768.f;
     }
+    
   }
   
   capture_thread.join();
+  std::cout << "overflow " << frame_overflow << std::endl;
   return 0;
 }
 
