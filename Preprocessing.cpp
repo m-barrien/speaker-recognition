@@ -17,3 +17,14 @@ SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int frame_l
 int SignalPreprocessor::getFrameCount(void){
 	return this->frame_count;
 }
+
+void SignalPreprocessor::applyPreEmphasis(float alpha){
+	for ( 
+		int i = this->raw_buffer_len-1 ; 
+		i > 0; 
+		i--
+		)
+	{
+		this->signal_buffer[i] = this->signal_buffer[i] - alpha* this->signal_buffer[i-1];
+	}
+}
