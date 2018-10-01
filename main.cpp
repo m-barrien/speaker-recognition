@@ -20,7 +20,7 @@
 
 
 static std::mutex raw_buffer_mutex;
-static std::string dev_name = "hw:1,0";
+static std::string dev_name = "hw:2,0";
 static char *buffer;
 static int16_t *int_buffer;
 static int frame_overflow=0;
@@ -130,6 +130,7 @@ int main() {
   signal (SIGINT,exit_handler);
 
   buffer = new char[RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS];
+  char* out_transformed_buffer = new char[RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS];
   int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
@@ -152,10 +153,12 @@ int main() {
       float_buffer[i] = (float) int_buffer[i]/32768.f;
     }
     sProcessor.applyPreEmphasis(0.97f);
+    sProcessor.dumpSignal(out_transformed_buffer);
+    //write(1, out_transformed_buffer, RAW_PERIOD_SAMPLE_SIZE*2);
   }
   
   capture_thread.join();
-  std::cout << "overflow " << frame_overflow << std::endl;
+  //std::cout << "overflow " << frame_overflow << std::endl;
   return 0;
 }
 

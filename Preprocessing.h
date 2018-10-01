@@ -1,5 +1,7 @@
 #include <assert.h>
+#include <string.h>
 #include <iostream>
+#include <cstdint>
 
 class SignalPreprocessor
 {
@@ -9,6 +11,8 @@ private:
 	int frame_count;
 	int in_frame_offset;
 	float *signal_buffer;
+	float **frames;
+	int16_t *out_signal_buffer;
 public:
 	SignalPreprocessor(float*,int,int,float);
 	int getFrameCount(void);
@@ -22,4 +26,6 @@ public:
 		 high frequency in order to improve phone recognition performance.  
 	*/
 	void applyPreEmphasis(float);
+	void dumpSignal(char*);
+	void dumpToFrames(void);
 };

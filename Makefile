@@ -9,4 +9,5 @@ run:
 sample:
 	rm -f audio.raw out.wav
 	./capture > audio.raw
+convert_sample:
 	ffmpeg -f s16le -ac 1 -ar 44100 -i audio.raw  out.wav
