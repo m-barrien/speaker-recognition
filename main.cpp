@@ -138,7 +138,11 @@ int main() {
   std::thread capture_thread(capture_mic);
 
   while(capturing){
-    if (frame_overflow < 1) continue;
+    if (frame_overflow < 1) {
+      //sleep 10ms waiting for worload
+      usleep(10000);
+      continue;
+    };
     raw_buffer_mutex.lock();
     memcpy(int_buffer, buffer, RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS);
     frame_overflow--;
