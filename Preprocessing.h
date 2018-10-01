@@ -2,11 +2,13 @@
 
 class SignalPreprocessor
 {
-public:
+private:
 	int raw_buffer_len;
 	int frame_len;
+	int frame_count;
 	int in_frame_offset;
 	float *signal_buffer;
+public:
 	SignalPreprocessor(float*,int,int,float);
-	int bar;
+	int getFrameCount(void);
 };

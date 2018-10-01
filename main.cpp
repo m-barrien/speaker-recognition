@@ -133,7 +133,7 @@ int main() {
   int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
-  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f);
+  SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f);
 
   std::thread capture_thread(capture_mic);
 
