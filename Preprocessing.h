@@ -28,15 +28,14 @@ private:
 	*/
 	float **power_frames;
 	float **log_energy_frames;
+	float *mfcc_frames;
 	float *mel_values;
 	float *freq_values;
 	int16_t *out_signal_buffer;
+	int n_mfcc_coefficients;
 
 	kiss_fftr_cfg fft_cfg;
 
-public:
-	SignalPreprocessor(float*,int,int,float,int);
-	int getFrameCount(void);
 	
 	/*
 		void SignalPreprocessor::applyPreEmphasis(void)
@@ -70,11 +69,19 @@ public:
 		output freqdata has nfft/2+1 complex points
 	*/
 	void framesFFTtoPowSpec(void);
-	float* getFrame(int i);
-	float* getPowerFrame(int i);
 	inline float melToHz(float);
 	inline float hzToMel(float);
-	void buildFilterBanks(int nfilters,int f0, int fmax);
 	float filterValue(int bank_index, float power_freq);
-	void powerFramesToEnergies(void);
+	void powerFramesToLogEnergies(void);
+	void logEnergyToMFCC(void);
+
+public:
+	SignalPreprocessor(float*,int,int,float,int);
+	float* getFrame(int i);
+	float* getPowerFrame(int i);
+	int getFrameCount(void);
+	int getMfccCount(void);
+	void configureMFCC(int n_coefficients);
+	void buildFilterBanks(int nfilters,int f0, int fmax);
+	void getMfccCoefs(int* nframes,int* n_mfcpN_mfcc_coefficientsc_coefficients,float* output);
 };

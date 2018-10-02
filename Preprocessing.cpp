@@ -41,6 +41,9 @@ SignalPreprocessor::SignalPreprocessor(float* buffer,int buffer_len, int _frame_
 int SignalPreprocessor::getFrameCount(void){
 	return this->frame_count;
 }
+int SignalPreprocessor::getMfccCount(void){
+	return this->n_mfcc_coefficients;
+}
 
 void SignalPreprocessor::applyPreEmphasis(float preemphasis){
 	for ( 
@@ -142,7 +145,7 @@ float SignalPreprocessor::filterValue(int bank_index, float power_freq){
 
 }
 
-void SignalPreprocessor::powerFramesToEnergies(void){
+void SignalPreprocessor::powerFramesToLogEnergies(void){
 	for (int i = 0; i < this->frame_count; ++i)
 	{
 		for (int filter_index = 0; filter_index < this->n_mel_filters; ++filter_index)
@@ -158,8 +161,42 @@ void SignalPreprocessor::powerFramesToEnergies(void){
 				this->log_energy_frames[i][filter_index] += this->power_frames[i][j] * filterValue(filter_index+1,actual_freq);
 			}
 			this->log_energy_frames[i][filter_index] = 20 * log10( this->log_energy_frames[i][filter_index] );
-			std::cout << this->log_energy_frames[i][filter_index] << " ";
 		}
-		std::cout << std::endl;
 	}
+}
+
+void SignalPreprocessor::configureMFCC(int _n_mfcc_coefficients){
+	assert(_n_mfcc_coefficients <= this->n_mel_filters);
+	this->n_mfcc_coefficients = _n_mfcc_coefficients;
+	this->mfcc_frames = new float[this->frame_count * _n_mfcc_coefficients];
+}
+void SignalPreprocessor::logEnergyToMFCC(void){
+	float C_n =0;
+	for (int f_indx = 0; f_indx < this->frame_count; ++f_indx)
+	{
+		for (int n = 0; n < this->n_mfcc_coefficients; ++n)
+		{
+			C_n =0;
+			for (int k = 0; k < this->n_mfcc_coefficients; ++k)
+			{
+				C_n += this->log_energy_frames[f_indx][k] * cos(n*(k-0.5f)*M_PI/this->n_mfcc_coefficients);
+			}
+			this->mfcc_frames[this->n_mfcc_coefficients*f_indx + n] = C_n;
+		}
+	}
+}
+
+void SignalPreprocessor::getMfccCoefs(int* nframes,int* pN_mfcc_coefficients,float* output){
+	assert(nframes && pN_mfcc_coefficients && output != NULL);
+
+	this->applyPreEmphasis(0.97f);
+    this->dumpToFrames();
+    this->applyWindowsToFrames();
+    this->framesFFTtoPowSpec();
+    this->powerFramesToLogEnergies();
+    this->logEnergyToMFCC();
+
+    *nframes = this->frame_count;
+    *pN_mfcc_coefficients = this->n_mfcc_coefficients;
+    memcpy(output, this->mfcc_frames, sizeof(float)*this->frame_count*this->n_mfcc_coefficients);
 }

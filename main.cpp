@@ -141,12 +141,18 @@ int main() {
   SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f, SAMPLES_PER_SECOND);
   std::thread capture_thread(capture_mic);
 
-  sProcessor.buildFilterBanks(30,0,13000);
+  sProcessor.buildFilterBanks(40,0,22000); 
+  sProcessor.configureMFCC(20); //20 mfcc coefs
+
+  //output mfcc buffer
+  int n_mfcc_frames =sProcessor.getFrameCount();
+  int n_mfcc_coefs =sProcessor.getMfccCount();
+  float *mfcc_buffer = new float[n_mfcc_frames * n_mfcc_coefs];
 
   while(capturing){
     if (frame_overflow < 1) {
-      //sleep 10ms waiting for worload
-      usleep(10000);
+      //sleep 5ms waiting for worload
+      usleep(5000);
       continue;
     };
     raw_buffer_mutex.lock();
@@ -157,17 +163,20 @@ int main() {
     {
       float_buffer[i] = (float) int_buffer[i]/32768.f;
     }
-    sProcessor.applyPreEmphasis(0.97f);
-    sProcessor.dumpToFrames();
-    sProcessor.applyWindowsToFrames();
-    sProcessor.framesFFTtoPowSpec();
-    sProcessor.powerFramesToEnergies();
+    //convert signal to mfcc coefs and write to mfcc_buffer
+    sProcessor.getMfccCoefs(&n_mfcc_frames,&n_mfcc_coefs,mfcc_buffer);
+
+    for (int i = 0; i < n_mfcc_coefs; ++i)
+    {
+      std::cout << mfcc_buffer[0 + i] << " ";
+    }
+    std::cout << std::endl;
 
     //write(1, out_transformed_buffer, RAW_PERIOD_SAMPLE_SIZE*2);
   }
   
   capture_thread.join();
-  std::cout << "overflow " << frame_overflow << std::endl;
+  //std::cout << "overflow " << frame_overflow << std::endl;
   return 0;
 }
 
