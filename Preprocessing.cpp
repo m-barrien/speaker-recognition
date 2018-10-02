@@ -77,7 +77,7 @@ void SignalPreprocessor::applyWindowsToFrames(void){
 		memcpy(this->frames[i], window_buffer, this->frame_len*sizeof(float)); 
 	}
 }
-void SignalPreprocessor::framesFFT(void){
+void SignalPreprocessor::framesFFTtoPowSpec(void){
 	kiss_fft_cpx complex_arr[this->frame_len];
 	for (int i = 0; i < this->frame_count; ++i)
 	{
@@ -104,6 +104,13 @@ void SignalPreprocessor::buildFilterBanks(int nfilters,int f0, int fmax){
 	this->mel_values = new float[nfilters+2];
 	this->freq_values = new float[nfilters+2];
 	this->n_mel_filters = nfilters;
+
+	this->log_energy_frames = new float*[this->frame_count];
+	for (int j = 0; j < this->frame_count; ++j)
+	{
+		this->log_energy_frames[j] = new float[this->n_mel_filters];
+	}
+
 	float mel_i = hzToMel(f0);
 	float mel_f = hzToMel(fmax);
 	for (int i = 0; i < nfilters+2; ++i)
@@ -133,4 +140,20 @@ float SignalPreprocessor::filterValue(int bank_index, float power_freq){
 	}
 	else return 0.f;
 
+}
+
+void SignalPreprocessor::powerFramesToEnergies(void){
+	for (int i = 0; i < this->frame_count; ++i)
+	{
+		for (int filter_index = 0; filter_index < this->n_mel_filters; ++filter_index)
+		{
+			this->log_energy_frames[i][filter_index]=0;
+			for (int j = 0; j < 1 + this->frame_len/2; ++j)
+			{
+				float actual_freq = j * this->base_freq;
+				this->log_energy_frames[i][filter_index] += this->power_frames[i][j] * filterValue(filter_index+1,actual_freq);
+			}
+			this->log_energy_frames[i][filter_index] = 20 * log10( this->log_energy_frames[i][filter_index] );
+		}
+	}
 }

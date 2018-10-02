@@ -27,6 +27,7 @@ private:
 	 power spectrum (periodogram) using the following equation:
 	*/
 	float **power_frames;
+	float **log_energy_frames;
 	float *mel_values;
 	float *freq_values;
 	int16_t *out_signal_buffer;
@@ -68,11 +69,12 @@ public:
 		input timedata has nfft scalar points
 		output freqdata has nfft/2+1 complex points
 	*/
-	void framesFFT(void);
+	void framesFFTtoPowSpec(void);
 	float* getFrame(int i);
 	float* getPowerFrame(int i);
 	inline float melToHz(float);
 	inline float hzToMel(float);
 	void buildFilterBanks(int nfilters,int f0, int fmax);
 	float filterValue(int bank_index, float power_freq);
+	void powerFramesToEnergies(void);
 };

@@ -141,7 +141,7 @@ int main() {
   SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f, SAMPLES_PER_SECOND);
   std::thread capture_thread(capture_mic);
 
-  sProcessor.buildFilterBanks(10,0,8000);
+  sProcessor.buildFilterBanks(40,0,22000);
 
   while(capturing){
     if (frame_overflow < 1) {
@@ -160,12 +160,9 @@ int main() {
     sProcessor.applyPreEmphasis(0.97f);
     sProcessor.dumpToFrames();
     sProcessor.applyWindowsToFrames();
-    sProcessor.framesFFT();
-    for (int i = 0; i < 8000; ++i)
-    {
-      std::cout << sProcessor.filterValue(10,(float)i) << std::endl;
-    }
-    
+    sProcessor.framesFFTtoPowSpec();
+    sProcessor.powerFramesToEnergies();
+
     //write(1, out_transformed_buffer, RAW_PERIOD_SAMPLE_SIZE*2);
   }
   
