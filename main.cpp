@@ -5,7 +5,7 @@
 
 /* Use the newer ALSA API */
 #define ALSA_PCM_NEW_HW_PARAMS_API
-
+// sudo apt-get install libasound2-dev
 #include <alsa/asoundlib.h>
 #include <signal.h>
 #include "Preprocessing.h"
@@ -141,7 +141,7 @@ int main() {
   SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f, SAMPLES_PER_SECOND);
   std::thread capture_thread(capture_mic);
 
-  sProcessor.buildFilterBanks(40,0,22000);
+  sProcessor.buildFilterBanks(30,0,13000);
 
   while(capturing){
     if (frame_overflow < 1) {
@@ -167,7 +167,7 @@ int main() {
   }
   
   capture_thread.join();
-  //std::cout << "overflow " << frame_overflow << std::endl;
+  std::cout << "overflow " << frame_overflow << std::endl;
   return 0;
 }
 

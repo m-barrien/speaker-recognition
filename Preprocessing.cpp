@@ -148,12 +148,18 @@ void SignalPreprocessor::powerFramesToEnergies(void){
 		for (int filter_index = 0; filter_index < this->n_mel_filters; ++filter_index)
 		{
 			this->log_energy_frames[i][filter_index]=0;
-			for (int j = 0; j < 1 + this->frame_len/2; ++j)
+			for (int j = 0;
+				j < 1 + this->frame_len/2 
+				&& 
+				j*this->base_freq< this->freq_values[this->n_mel_filters+1]; //gone past filter frequency so all ceroes
+				++j)
 			{
 				float actual_freq = j * this->base_freq;
 				this->log_energy_frames[i][filter_index] += this->power_frames[i][j] * filterValue(filter_index+1,actual_freq);
 			}
 			this->log_energy_frames[i][filter_index] = 20 * log10( this->log_energy_frames[i][filter_index] );
+			std::cout << this->log_energy_frames[i][filter_index] << " ";
 		}
+		std::cout << std::endl;
 	}
 }
