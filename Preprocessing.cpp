@@ -114,6 +114,23 @@ void SignalPreprocessor::buildFilterBanks(int nfilters,int f0, int fmax){
 }
 float SignalPreprocessor::filterValue(int bank_index, float power_freq){
 	assert(this->freq_values != NULL && bank_index <= this->n_mel_filters && bank_index >0);
-	return 0.f;
+	if (power_freq < this->freq_values[bank_index-1]) return 0.f;
+	else if (
+		power_freq > this->freq_values[bank_index-1]
+		&&
+		power_freq <= this->freq_values[bank_index]
+	)
+	{
+		return (power_freq -this->freq_values[bank_index-1])/(this->freq_values[bank_index]-this->freq_values[bank_index-1]);
+	}
+	else if (
+		power_freq > this->freq_values[bank_index]
+		&&
+		power_freq <= this->freq_values[bank_index+1]
+		)
+	{
+		return ( this->freq_values[bank_index+1] - power_freq )/(this->freq_values[bank_index+1]-this->freq_values[bank_index]);
+	}
+	else return 0.f;
 
 }

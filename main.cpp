@@ -20,7 +20,7 @@
 
 
 static std::mutex raw_buffer_mutex;
-static std::string dev_name = "hw:2,0";
+static std::string dev_name = "hw:1,0";
 static char *buffer;
 static int16_t *int_buffer;
 static int frame_overflow=0;
@@ -139,8 +139,9 @@ int main() {
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
   SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f, SAMPLES_PER_SECOND);
-
   std::thread capture_thread(capture_mic);
+
+  sProcessor.buildFilterBanks(10,0,8000);
 
   while(capturing){
     if (frame_overflow < 1) {
@@ -160,21 +161,11 @@ int main() {
     sProcessor.dumpToFrames();
     sProcessor.applyWindowsToFrames();
     sProcessor.framesFFT();
-
+    for (int i = 0; i < 8000; ++i)
+    {
+      std::cout << sProcessor.filterValue(10,(float)i) << std::endl;
+    }
     
-    float *frame = sProcessor.getFrame(5);
-    float *powerframe = sProcessor.getPowerFrame(5);
-    capturing=false;
-    for (int i = 0; i < 1024; ++i)
-    {
-      std::cout << frame[i] << ",";
-    }
-    std::cout << std::endl;
-    for (int i = 0; i < 1024; ++i)
-    {
-      std::cout << powerframe[i] << ",";
-    }
-    std::cout << std::endl;
     //write(1, out_transformed_buffer, RAW_PERIOD_SAMPLE_SIZE*2);
   }
   
