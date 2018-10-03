@@ -25,14 +25,16 @@ static char *buffer;
 static int16_t *int_buffer;
 static int frame_overflow=0;
 static float *float_buffer;
-static bool capturing = true;
+
+//seconds * SAMPLES_PER_SECOND/RAW_PERIOD_SAMPLE_SIZE
+static int capturing = 1 * SAMPLES_PER_SECOND/RAW_PERIOD_SAMPLE_SIZE;
 
 void exit_handler(int sig){
   if (sig == SIGINT)
   {
     /* code */
   }
-  capturing=false;
+  capturing=0;
 }
 
 void *capture_mic() {
@@ -95,7 +97,7 @@ void *capture_mic() {
   snd_pcm_hw_params_get_period_time(params,
                                          &val, &dir);
   //loops = 50000 / val;
-  while (capturing) {
+  while (capturing >0) {
     //loops--;
     raw_buffer_mutex.lock();
     rc = snd_pcm_readi(handle, buffer, frames);
@@ -134,7 +136,6 @@ int main() {
   signal (SIGINT,exit_handler);
 
   buffer = new char[RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS];
-  char* out_transformed_buffer = new char[RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS];
   int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
@@ -148,8 +149,10 @@ int main() {
   int n_mfcc_frames =sProcessor.getFrameCount();
   int n_mfcc_coefs =sProcessor.getMfccCount();
   float *mfcc_buffer = new float[n_mfcc_frames * n_mfcc_coefs];
+  
+  write(1, &n_mfcc_coefs, sizeof(int));
 
-  while(capturing){
+  while(capturing > 0){
     if (frame_overflow < 1) {
       //sleep 5ms waiting for worload
       usleep(5000);
@@ -158,6 +161,7 @@ int main() {
     raw_buffer_mutex.lock();
     memcpy(int_buffer, buffer, RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS);
     frame_overflow--;
+    capturing--;
     raw_buffer_mutex.unlock();
     for (int i = 0; i < RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS; ++i)
     {
@@ -165,14 +169,9 @@ int main() {
     }
     //convert signal to mfcc coefs and write to mfcc_buffer
     sProcessor.getMfccCoefs(&n_mfcc_frames,&n_mfcc_coefs,mfcc_buffer);
+    
+    write(1, mfcc_buffer, sizeof(float)*n_mfcc_frames*n_mfcc_coefs);
 
-    for (int i = 0; i < n_mfcc_coefs; ++i)
-    {
-      std::cout << mfcc_buffer[0 + i] << " ";
-    }
-    std::cout << std::endl;
-
-    //write(1, out_transformed_buffer, RAW_PERIOD_SAMPLE_SIZE*2);
   }
   
   capture_thread.join();
