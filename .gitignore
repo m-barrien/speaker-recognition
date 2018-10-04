@@ -34,3 +34,6 @@ capture
 
 *.wav
 *.raw
+*.mfcc
+mfcc/
+*.txt
