@@ -14,9 +14,11 @@ CFLAGS=-std=c++11 -Wall -O3 $(WARNINGS)
 all: clean compile
 
 clean:
-	rm capture -f
+	rm capture dump_mic dump_mfcc -f
 compile:
 	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o capture  main.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lasound -lpthread
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o dump_mic  dump_mic.cpp -lasound -lpthread
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o dump_mfcc  dump_mfcc.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lasound -lpthread
 run:
 	./capture
 sample:

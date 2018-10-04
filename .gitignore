@@ -37,3 +37,5 @@ capture
 *.mfcc
 mfcc/
 *.txt
+dump_mic
+dump_mfcc
