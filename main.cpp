@@ -9,6 +9,7 @@
 #include <alsa/asoundlib.h>
 #include <signal.h>
 #include "Preprocessing.h"
+#include "udpsender.h"
 #include <thread>
 #include <string>
 #include <mutex>
@@ -27,14 +28,14 @@ static int frame_overflow=0;
 static float *float_buffer;
 
 //seconds * SAMPLES_PER_SECOND/RAW_PERIOD_SAMPLE_SIZE
-static int capturing = 1 * SAMPLES_PER_SECOND/RAW_PERIOD_SAMPLE_SIZE;
+static int capturing = true;
 
 void exit_handler(int sig){
   if (sig == SIGINT)
   {
     /* code */
   }
-  capturing=0;
+  capturing=false;
 }
 
 void *capture_mic() {
@@ -143,16 +144,24 @@ int main() {
   std::thread capture_thread(capture_mic);
 
   sProcessor.buildFilterBanks(40,0,22000); 
-  sProcessor.configureMFCC(20); //20 mfcc coefs
+  sProcessor.configureMFCC(40); //20 mfcc coefs
 
   //output mfcc buffer
   int n_mfcc_frames =sProcessor.getFrameCount();
   int n_mfcc_coefs =sProcessor.getMfccCount();
   float *mfcc_buffer = new float[n_mfcc_frames * n_mfcc_coefs];
-  
-  write(1, &n_mfcc_coefs, sizeof(int));
 
-  while(capturing > 0){
+  //build udp sender
+  std::string addr = "127.0.0.1";
+  int port = 3333;
+  udp_client_server::udp_client udpsender = udp_client_server::udp_client(addr.c_str(), port);
+  
+  //write(1, &n_mfcc_coefs, sizeof(int));
+  std::cout << "Sending to " << addr << ":" << port <<std::endl;
+  std::cout << n_mfcc_coefs << " MFCC coefficients " << std::endl;
+  std::cout << sizeof(float)*n_mfcc_frames*n_mfcc_coefs << " bytes " << std::endl;
+
+  while(capturing){
     if (frame_overflow < 1) {
       //sleep 5ms waiting for worload
       usleep(5000);
@@ -161,7 +170,6 @@ int main() {
     raw_buffer_mutex.lock();
     memcpy(int_buffer, buffer, RAW_PERIOD_SAMPLE_SIZE*2*N_CHANNELS);
     frame_overflow--;
-    capturing--;
     raw_buffer_mutex.unlock();
     for (int i = 0; i < RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS; ++i)
     {
@@ -170,7 +178,8 @@ int main() {
     //convert signal to mfcc coefs and write to mfcc_buffer
     sProcessor.getMfccCoefs(&n_mfcc_frames,&n_mfcc_coefs,mfcc_buffer);
     
-    write(1, mfcc_buffer, sizeof(float)*n_mfcc_frames*n_mfcc_coefs);
+    //write(1, mfcc_buffer, sizeof(float)*n_mfcc_frames*n_mfcc_coefs);
+    udpsender.send((char*)mfcc_buffer,sizeof(float)*n_mfcc_frames*n_mfcc_coefs);  
 
   }
   

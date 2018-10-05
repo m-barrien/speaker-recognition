@@ -1,6 +1,6 @@
 DATATYPE=float
 TYPEFLAGS=-Dkiss_fft_scalar=$(DATATYPE)
-WARNINGS=-W -Wall  -Waggregate-return -Wcast-align -Wcast-qual  -Wshadow  -Wwrite-strings
+WARNINGS=-W -Wall  -Wcast-align -Wcast-qual  -Wshadow  -Wwrite-strings
 
 FFTUTIL=fft_$(DATATYPE)
 FASTFILT=fastconv_$(DATATYPE)
@@ -16,7 +16,7 @@ all: clean compile
 clean:
 	rm capture dump_mic dump_mfcc -f
 compile:
-	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o capture  main.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lasound -lpthread
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o capture  main.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c udpsender.cpp -lasound -lpthread
 	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o dump_mic  dump_mic.cpp -lasound -lpthread
 	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o dump_mfcc  dump_mfcc.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lasound -lpthread
 run:
