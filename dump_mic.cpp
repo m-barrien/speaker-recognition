@@ -13,10 +13,7 @@
 #include <mutex>
 #include <iostream>
 #include <cstdint>
-#define N_CHANNELS 1
-#define RAW_PERIOD_SAMPLE_SIZE 8192
-#define SAMPLES_PER_SECOND 44100
-
+#include "conf.h"
 
 static std::mutex raw_buffer_mutex;
 static std::string dev_name = "hw:1,0";

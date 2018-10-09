@@ -15,10 +15,7 @@
 #include <mutex>
 #include <iostream>
 #include <cstdint>
-#define N_CHANNELS 1
-#define RAW_PERIOD_SAMPLE_SIZE 8192
-#define SAMPLES_PER_SECOND 44100
-
+#include "conf.h"
 
 static std::mutex raw_buffer_mutex;
 static std::string dev_name = "hw:1,0";
@@ -98,6 +95,7 @@ void *capture_mic() {
   snd_pcm_hw_params_get_period_time(params,
                                          &val, &dir);
   //loops = 50000 / val;
+  
   while (capturing >0) {
     //loops--;
     raw_buffer_mutex.lock();
@@ -140,27 +138,33 @@ int main() {
   int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
-  SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f, SAMPLES_PER_SECOND);
+  SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, FRAME_SIZE, WINDOW_OVERLAP, SAMPLES_PER_SECOND);
   std::thread capture_thread(capture_mic);
 
-  sProcessor.buildFilterBanks(40,0,22000); 
-  sProcessor.configureMFCC(40); //20 mfcc coefs
+  sProcessor.buildFilterBanks(N_FILTERS,MIN_FREQ,MAX_FREQ); 
+  sProcessor.configureMFCC(N_MFCC_COEFS); //20 mfcc coefs
 
   //output mfcc buffer
   int n_mfcc_frames =sProcessor.getFrameCount();
   int n_mfcc_coefs =sProcessor.getMfccCount();
   float *mfcc_buffer = new float[n_mfcc_frames * n_mfcc_coefs];
 
+  //udp output buffer
+  char *udp_mfcc_buffer = new char[sizeof(float) * n_mfcc_frames * n_mfcc_coefs * MFCC_LOT_SIZE];
   //build udp sender
-  std::string addr = "127.0.0.1";
-  int port = 3333;
+  std::string addr = UDP_ADDR;
+  int port = UDP_PORT;
   udp_client_server::udp_client udpsender = udp_client_server::udp_client(addr.c_str(), port);
   
   //write(1, &n_mfcc_coefs, sizeof(int));
   std::cout << "Sending to " << addr << ":" << port <<std::endl;
+  std::cout << n_mfcc_frames * MFCC_LOT_SIZE << " frames total" << std::endl;
   std::cout << n_mfcc_coefs << " MFCC coefficients " << std::endl;
-  std::cout << sizeof(float)*n_mfcc_frames*n_mfcc_coefs << " bytes " << std::endl;
+  std::cout << sizeof(float)*n_mfcc_frames*n_mfcc_coefs  << " bytes p frame " << std::endl;
+  std::cout << sizeof(float)*n_mfcc_frames*n_mfcc_coefs * MFCC_LOT_SIZE << " total bytes " << std::endl;
 
+  size_t cycles =0;
+  int bytes_per_mfcc_bunch = sizeof(float)*n_mfcc_frames*n_mfcc_coefs;
   while(capturing){
     if (frame_overflow < 1) {
       //sleep 5ms waiting for worload
@@ -179,7 +183,13 @@ int main() {
     sProcessor.getMfccCoefs(&n_mfcc_frames,&n_mfcc_coefs,mfcc_buffer);
     
     //write(1, mfcc_buffer, sizeof(float)*n_mfcc_frames*n_mfcc_coefs);
-    udpsender.send((char*)mfcc_buffer,sizeof(float)*n_mfcc_frames*n_mfcc_coefs);  
+    
+    memcpy((udp_mfcc_buffer + (bytes_per_mfcc_bunch*(cycles % MFCC_LOT_SIZE)) ), mfcc_buffer, bytes_per_mfcc_bunch);
+    if (cycles % MFCC_LOT_SIZE == MFCC_LOT_SIZE -1)
+    {
+      udpsender.send((char*)udp_mfcc_buffer,bytes_per_mfcc_bunch*MFCC_LOT_SIZE);  
+    }
+    cycles++;
 
   }
   

@@ -5,7 +5,7 @@ import sys
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Bind the socket to the port
-server_address = ('localhost', 	3333)
+server_address = ('172.17.0.2', 	3333)
 sock.bind(server_address)
 
 while True:

@@ -14,10 +14,7 @@
 #include <mutex>
 #include <iostream>
 #include <cstdint>
-#define N_CHANNELS 1
-#define RAW_PERIOD_SAMPLE_SIZE 8192
-#define SAMPLES_PER_SECOND 44100
-
+#include "conf.h"
 
 static std::mutex raw_buffer_mutex;
 static std::string dev_name = "hw:1,0";
@@ -139,11 +136,11 @@ int main() {
   int_buffer = new int16_t[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
   float_buffer = new float[RAW_PERIOD_SAMPLE_SIZE*N_CHANNELS];
 
-  SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, 1024, 0.5f, SAMPLES_PER_SECOND);
+  SignalPreprocessor sProcessor =  SignalPreprocessor(float_buffer, RAW_PERIOD_SAMPLE_SIZE, FRAME_SIZE, WINDOW_OVERLAP, SAMPLES_PER_SECOND);
   std::thread capture_thread(capture_mic);
 
-  sProcessor.buildFilterBanks(40,0,22000); 
-  sProcessor.configureMFCC(20); //20 mfcc coefs
+  sProcessor.buildFilterBanks(N_FILTERS,MIN_FREQ,MAX_FREQ); 
+  sProcessor.configureMFCC(N_MFCC_COEFS); //n mfcc coefs
 
   //output mfcc buffer
   int n_mfcc_frames =sProcessor.getFrameCount();
