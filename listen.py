@@ -1,9 +1,10 @@
 import socket
 import struct
 
+# Create a TCP/IP socket
 MCAST_GRP = '225.0.0.1'
 MCAST_PORT = 3333
-IS_ALL_GROUPS = True
+IS_ALL_GROUPS = False
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -17,6 +18,8 @@ mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
 
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
+#sock.setblocking(0)
 while True:
-  print sock.recv(12000)
-  
+    data, address = sock.recvfrom(12000)
+    #print >>sys.stderr, data
+    print(data)
