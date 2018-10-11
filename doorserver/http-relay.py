@@ -1,6 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import ssl
-import GPIORelay
+from GPIORelay import GPIORelay
 
 secret="abranlawea"
 relay = GPIORelay(12)
