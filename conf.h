@@ -9,5 +9,5 @@
 #define WINDOW_OVERLAP 0.5f
 #define MFCC_LOT_SIZE 5
 #define UDP_PORT 3333
-#define UDP_ADDR "255.255.255.255"
+#define UDP_ADDR "225.0.0.1"
 
