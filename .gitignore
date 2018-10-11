@@ -39,3 +39,5 @@ mfcc/
 *.txt
 dump_mic
 dump_mfcc
+bin/
+*.pem
