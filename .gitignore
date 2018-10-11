@@ -41,3 +41,5 @@ dump_mic
 dump_mfcc
 bin/
 *.pem
+.env
+__pycache__

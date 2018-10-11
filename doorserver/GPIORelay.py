@@ -11,9 +11,9 @@ class GPIORelay:
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setup(pin, GPIO.OUT)
 		GPIO.output(pin, GPIO.LOW)
-    def __del__(self):
-        GPIO.cleanup()
-    def openDoor(self):
-    	GPIO.output(self.pin, GPIO.HIGH)
+	def __del__(self):
+		GPIO.cleanup()
+	def openDoor(self):
+		GPIO.output(self.pin, GPIO.HIGH)
 		time.sleep(0.5)
 		GPIO.output(self.pin, GPIO.LOW)
