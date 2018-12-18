@@ -1,0 +1,195 @@
+#include "CUDAPreprocessing.h"
+
+CUDASignalPreprocessor::CUDASignalPreprocessor(float* buffer,int buffer_len, int _frame_len, float overlap_percentage, int sr){
+	assert(overlap_percentage >= 0.f && overlap_percentage < 1.f);
+	assert(buffer_len >= _frame_len);
+	this->signal_buffer = buffer;
+	this->raw_buffer_len = buffer_len;
+	this->frame_len = _frame_len;
+	this->in_frame_offset = (int) (_frame_len*(1.0f - overlap_percentage));
+
+	int i=0;
+	while(buffer_len >= _frame_len + i*this->in_frame_offset) i++;
+	this->frame_count = i;
+
+	this->frames = new float*[this->frame_count];
+	this->power_frames = new float*[this->frame_count];
+	for (int j = 0; j < this->frame_count; ++j)
+	{
+		this->frames[j] = new float[_frame_len];
+		this->power_frames[j] = new float[_frame_len];
+	}
+	/*
+		Fill hamming window
+	*/
+	this->hamming_window = new float[_frame_len];
+	for (int j = 0; j < _frame_len; ++j)
+	{
+		this->hamming_window[j]=( 0.54 - 0.46 * cos((2*M_PI*j)/(this->frame_len-1)) );
+	}
+
+	/*
+		KISS FFT allocate
+		*/
+	this->fft_cfg = kiss_fftr_alloc(_frame_len,0,NULL, NULL);
+	this->sample_rate = sr;
+	this->base_freq = (float)sr/(float)frame_len;
+
+}
+
+int CUDASignalPreprocessor::getFrameCount(void){
+	return this->frame_count;
+}
+int CUDASignalPreprocessor::getMfccCount(void){
+	return this->n_mfcc_coefficients;
+}
+
+void CUDASignalPreprocessor::applyPreEmphasis(float preemphasis){
+	for ( 
+		int i = this->raw_buffer_len-1 ; 
+		i > 0; 
+		i--
+		)
+	{
+		this->signal_buffer[i] = this->signal_buffer[i] - preemphasis* this->signal_buffer[i-1];
+	}
+}
+
+void CUDASignalPreprocessor::dumpToFrames(void){
+	for (int i = 0; i < this->frame_count; ++i)
+	{
+		memcpy(this->frames[i], this->signal_buffer + i*in_frame_offset, this->frame_len*sizeof(float)); //4 bytes per float
+	}
+}
+void CUDASignalPreprocessor::applyWindowsToFrames(void){
+	float window_buffer[this->frame_len];
+
+	for (int i = 0; i < this->frame_count; ++i)
+	{
+		for (int j = 0; j < this->frame_len; ++j)
+		{
+			window_buffer[j]=this->frames[i][j] * this->hamming_window[j];
+		}
+		memcpy(this->frames[i], window_buffer, this->frame_len*sizeof(float)); 
+	}
+}
+void CUDASignalPreprocessor::framesFFTtoPowSpec(void){
+	kiss_fft_cpx complex_arr[this->frame_len];
+	for (int i = 0; i < this->frame_count; ++i)
+	{
+		kiss_fftr(this->fft_cfg, this->frames[i], complex_arr);
+		for (int j = 0; j < this->frame_len; ++j)
+		{
+			this->power_frames[i][j] = (pow(complex_arr[j].r,2) + pow(complex_arr[j].i,2))/this->frame_len;
+		}
+	}
+}
+float* CUDASignalPreprocessor::getFrame(int i){
+	return this->frames[i];
+}
+float* CUDASignalPreprocessor::getPowerFrame(int i){
+	return this->power_frames[i];
+}
+inline float CUDASignalPreprocessor::melToHz(float mel){
+	return 700*(exp(mel/1125)-1);
+}
+inline float CUDASignalPreprocessor::hzToMel(float f){
+	return 1125*log(1+f/700);
+}
+void CUDASignalPreprocessor::buildFilterBanks(int nfilters,int f0, int fmax){
+	this->mel_values = new float[nfilters+2];
+	this->freq_values = new float[nfilters+2];
+	this->n_mel_filters = nfilters;
+
+	this->log_energy_frames = new float*[this->frame_count];
+	for (int j = 0; j < this->frame_count; ++j)
+	{
+		this->log_energy_frames[j] = new float[this->n_mel_filters];
+	}
+
+	float mel_i = hzToMel(f0);
+	float mel_f = hzToMel(fmax);
+	for (int i = 0; i < nfilters+2; ++i)
+	{
+		this->mel_values[i] = mel_i + i*(mel_f - mel_i)/(nfilters+1);
+		this->freq_values[i] = melToHz(this->mel_values[i]);
+	}
+}
+float CUDASignalPreprocessor::filterValue(int bank_index, float power_freq){
+	assert(this->freq_values != NULL && bank_index <= this->n_mel_filters && bank_index >0);
+	if (power_freq < this->freq_values[bank_index-1]) return 0.f;
+	else if (
+		power_freq > this->freq_values[bank_index-1]
+		&&
+		power_freq <= this->freq_values[bank_index]
+	)
+	{
+		return (power_freq -this->freq_values[bank_index-1])/(this->freq_values[bank_index]-this->freq_values[bank_index-1]);
+	}
+	else if (
+		power_freq > this->freq_values[bank_index]
+		&&
+		power_freq <= this->freq_values[bank_index+1]
+		)
+	{
+		return ( this->freq_values[bank_index+1] - power_freq )/(this->freq_values[bank_index+1]-this->freq_values[bank_index]);
+	}
+	else return 0.f;
+
+}
+
+void CUDASignalPreprocessor::powerFramesToLogEnergies(void){
+	for (int i = 0; i < this->frame_count; ++i)
+	{
+		for (int filter_index = 0; filter_index < this->n_mel_filters; ++filter_index)
+		{
+			this->log_energy_frames[i][filter_index]=0;
+			for (int j = 0;
+				j < 1 + this->frame_len/2 
+				&& 
+				j*this->base_freq< this->freq_values[this->n_mel_filters+1]; //gone past filter frequency so all ceroes
+				++j)
+			{
+				float actual_freq = j * this->base_freq;
+				this->log_energy_frames[i][filter_index] += this->power_frames[i][j] * filterValue(filter_index+1,actual_freq);
+			}
+			this->log_energy_frames[i][filter_index] = 20 * log10( this->log_energy_frames[i][filter_index] );
+		}
+	}
+}
+
+void CUDASignalPreprocessor::configureMFCC(int _n_mfcc_coefficients){
+	assert(_n_mfcc_coefficients <= this->n_mel_filters);
+	this->n_mfcc_coefficients = _n_mfcc_coefficients;
+	this->mfcc_frames = new float[this->frame_count * _n_mfcc_coefficients];
+}
+void CUDASignalPreprocessor::logEnergyToMFCC(void){
+	float C_n =0;
+	for (int f_indx = 0; f_indx < this->frame_count; ++f_indx)
+	{
+		for (int n = 0; n < this->n_mfcc_coefficients; ++n)
+		{
+			C_n =0;
+			for (int k = 0; k < this->n_mfcc_coefficients; ++k)
+			{
+				C_n += this->log_energy_frames[f_indx][k] * cos(n*(k-0.5f)*M_PI/this->n_mfcc_coefficients);
+			}
+			this->mfcc_frames[this->n_mfcc_coefficients*f_indx + n] = C_n;
+		}
+	}
+}
+
+void CUDASignalPreprocessor::getMfccCoefs(int* nframes,int* pN_mfcc_coefficients,float* output){
+	assert(nframes && pN_mfcc_coefficients && output != NULL);
+
+	this->applyPreEmphasis(0.97f);
+    this->dumpToFrames();
+    this->applyWindowsToFrames();
+    this->framesFFTtoPowSpec();
+    this->powerFramesToLogEnergies();
+    this->logEnergyToMFCC();
+
+    *nframes = this->frame_count;
+    *pN_mfcc_coefficients = this->n_mfcc_coefficients;
+    memcpy(output, this->mfcc_frames, sizeof(float)*this->frame_count*this->n_mfcc_coefficients);
+}

@@ -16,11 +16,11 @@ all: clean compile
 clean:
 	rm bin/capture bin/dump_mic bin/dump_mfcc -f
 compile:
-	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o bin/capture  main.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c udpsender.cpp -lasound -lpthread
-	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o bin/dump_mic  dump_mic.cpp -lasound -lpthread
-	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o bin/dump_mfcc  dump_mfcc.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lasound -lpthread
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o bin/dump_mfcc  dump_mfcc.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lpthread
+	/usr/local/cuda-10.0/bin/nvcc -ccbin g++ -I../../common/inc  -m64    -gencode arch=compute_61,code=sm_61 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_75,code=sm_75 -gencode arch=compute_75,code=compute_75 -o main.o -c main.cu -lcufft
+	/usr/local/cuda-10.0/bin/nvcc -ccbin g++   -m64      -gencode arch=compute_61,code=sm_61 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_75,code=sm_75 -gencode arch=compute_75,code=compute_75 -o main main.o 
 run:
-	./capture
+	./bin/dump_mfcc
 sample:
 	rm -f audio.raw out.wav
 	./bin/capture > ../audio.raw
