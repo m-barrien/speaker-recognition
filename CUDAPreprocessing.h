@@ -4,13 +4,11 @@
 #include <cstdint>
 #include <cmath>
 #include <cuda_runtime.h>
-#include <inc/cufft.h>
+#include <cufft.h>
 #include "conf.h"
 
-
-class CUDASignalPreprocessor
+struct wave_params_t
 {
-private:
 	int sample_rate;
 	int raw_buffer_len;
 	int frame_len;
@@ -23,6 +21,7 @@ private:
 	*/
 	float base_freq;
 	float *signal_buffer;
+	float *dev_signal_buffer;
 	float *hamming_window;
 	float **frames;
 	/*
@@ -35,12 +34,18 @@ private:
 	float *mel_values;
 	float *freq_values;
 	int n_mfcc_coefficients;
+	
+} typedef wave_params_t;
+class CUDASignalPreprocessor
+{
+private:
+	wave_params_t wave_params;
 
-	kiss_fftr_cfg fft_cfg;
+	//kiss_fftr_cfg fft_cfg;
 
 	
 	/*
-		void CUDASignalPreprocessor::applyPreEmphasis(void)
+		void SignalPreprocessor::applyPreEmphasis(void)
 
 		S1 (n) = S(n) - alpha* S(n-1)
 		Where  s  (n)  is  the  speech  signal  &  parameter  α  is  
@@ -73,8 +78,6 @@ private:
 
 public:
 	CUDASignalPreprocessor(float*,int,int,float,int);
-	float* getFrame(int i);
-	float* getPowerFrame(int i);
 	int getFrameCount(void);
 	int getMfccCount(void);
 	void configureMFCC(int n_coefficients);
