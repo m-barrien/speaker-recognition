@@ -15,10 +15,16 @@ all: clean compile
 
 clean:
 	rm bin/capture bin/dump_mic bin/dump_mfcc -f
-compile:
-	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o bin/capture  main.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c udpsender.cpp -lasound -lpthread
-	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o bin/dump_mic  dump_mic.cpp -lasound -lpthread
-	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o bin/dump_mfcc  dump_mfcc.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lasound -lpthread
+
+compile: ensure_bin
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o ./bin/capture  main.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c udpsender.cpp -lasound -lpthread
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o ./bin/wav2mfcc-json  convert_wav_to_mfcc_json.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c udpsender.cpp -lasound -lpthread -lsndfile
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o ./bin/dump_mic  dump_mic.cpp -lasound -lpthread
+	g++ $(CFLAGS) -I.. $(TYPEFLAGS) -DREAL_FASTFIR -o ./bin/dump_mfcc  dump_mfcc.cpp Preprocessing.cpp include/kissfft/kiss_fft.c include/kissfft/kiss_fftr.c -lasound -lpthread
+
+ensure_bin:
+	mkdir -p bin
+
 run:
 	./capture
 sample:

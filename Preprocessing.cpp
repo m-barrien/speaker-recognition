@@ -198,5 +198,6 @@ void SignalPreprocessor::getMfccCoefs(int* nframes,int* pN_mfcc_coefficients,flo
 
     *nframes = this->frame_count;
     *pN_mfcc_coefficients = this->n_mfcc_coefficients;
+	// int bytes_per_mfcc_bunch = sizeof(float) * n_mfcc_frames * n_mfcc_coefs;
     memcpy(output, this->mfcc_frames, sizeof(float)*this->frame_count*this->n_mfcc_coefficients);
 }

@@ -4,7 +4,7 @@
 #define N_FILTERS 40
 #define N_MFCC_COEFS 40
 #define FRAME_SIZE 1024
-#define MAX_FREQ 22000
+#define MAX_FREQ 16000
 #define MIN_FREQ 0
 #define WINDOW_OVERLAP 0.5f
 #define MFCC_LOT_SIZE 5

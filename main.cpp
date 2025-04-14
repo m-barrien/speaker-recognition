@@ -18,7 +18,7 @@
 #include "conf.h"
 
 static std::mutex raw_buffer_mutex;
-static std::string dev_name = "hw:1,0";
+static std::string dev_name = "hw:0,0";
 static char *buffer;
 static int16_t *int_buffer;
 static int frame_overflow=0;
