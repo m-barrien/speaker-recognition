@@ -109,6 +109,14 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   json_file << "{" << std::endl;
+  json_file << "  \"sample_rate\": " << sfinfo.samplerate << "," << std::endl;
+  json_file << "  \"n_mfcc_coefficients\": " << n_mfcc_coefs << "," << std::endl;
+  json_file << "  \"n_mel_filters\": " << n_mel_filters << "," << std::endl;
+  json_file << "  \"min_freq\": " << min_freq << "," << std::endl;
+  json_file << "  \"max_freq\": " << max_freq << "," << std::endl;
+  json_file << "  \"mfcc_wav_frame_size\": " << mfcc_wav_frame_size << "," << std::endl;
+  json_file << "  \"window_overlap\": " << static_cast<float> (WINDOW_OVERLAP) << "," << std::endl;
+  json_file << "  \"seconds_per_frame\": " << static_cast<float>(mfcc_wav_frame_size) / sfinfo.samplerate << "," << std::endl;
   json_file << "  \"mfcc\": [" << std::endl;
   bool first_frame = true;
   while (capturing_file_stream) {

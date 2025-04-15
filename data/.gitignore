@@ -1,0 +1,6 @@
+!test.wav
+*.wav
+*.WAV
+!test.json
+*.json
+*.JSON
