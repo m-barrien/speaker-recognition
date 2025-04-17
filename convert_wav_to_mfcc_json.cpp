@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
   json_file << "  \"mfcc_wav_frame_size\": " << mfcc_wav_frame_size << "," << std::endl;
   json_file << "  \"window_overlap\": " << static_cast<float> (WINDOW_OVERLAP) << "," << std::endl;
   json_file << "  \"seconds_per_frame\": " << static_cast<float>(mfcc_wav_frame_size) / sfinfo.samplerate << "," << std::endl;
+  json_file << "  \"length_in_seconds\": " << static_cast<float>(sfinfo.frames) / sfinfo.samplerate << "," << std::endl;
   json_file << "  \"mfcc\": [" << std::endl;
   bool first_frame = true;
   while (capturing_file_stream) {
@@ -136,7 +137,7 @@ int main(int argc, char *argv[]) {
     bool invalid_value_found = false;
     for (int i = 0; i < n_mfcc_frames * n_mfcc_coefs; ++i) {
       if (std::isnan(mfcc_buffer[i]) || std::isinf(mfcc_buffer[i])) {
-        std::cerr << "Error: Invalid value (NaN or Inf) detected in MFCC buffer at index " << i << std::endl;
+        //std::cerr << "Error: Invalid value (NaN or Inf) detected in MFCC buffer at index " << i << std::endl;
         invalid_value_found = true;
         break;
       }
